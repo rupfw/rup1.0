@@ -1,0 +1,72 @@
+
+
+from socket import *
+import os.path
+import json
+import sys
+
+serverIP = '127.0.0.1'
+blksz = 1024 #Bulk size for receiving file in chunks
+filePathDict = {} #Dictionary for path, size pairs
+
+
+if len(sys.argv) < 2:
+	print 'Server Port No. missing in command line arguments'
+	serverPort = raw_input('Enter Server Port No.: ')
+else:
+	serverPort = sys.argv[1]
+
+serverPort= int (serverPort)
+
+#Creating server socket for control connection
+serverSocket = socket(AF_INET,SOCK_STREAM) 
+serverSocket.bind((serverIP,serverPort)) 
+serverSocket.listen(10)
+
+print 'FTP Server Started successfully.\n' 
+
+#Function for 
+def direc_rec(ext, dirname, names):
+		ext = ext.lower()
+		for name in names:
+			if (name.lower()==ext):
+				filePathDict[os.path.join(dirname, name)]=os.path.getsize(os.path.join(dirname, name))
+				#print(str(filePathDict[os.path.join(dirname, name)]))
+
+
+
+def SendFile (filename,ClientIP, DataConPort):
+	ServerDataSocket = socket(AF_INET, SOCK_STREAM)
+	ServerDataSocket.connect((clientIP,DataConPort)) 
+	if connectionSocket.recv(1024)=="125":
+		print 'Data connection open; data transfer will start shortly'
+	try:
+			file = open(filename, 'rb')
+			while True:
+				bytes = file.read(blksz) # read/send 1K at a time
+				if not bytes: break # until file totally sent
+				sent = ServerDataSocket.send(bytes)
+				assert sent == len(bytes)
+	except:
+		print('Error downloading file on server:', filename)
+	connectionSocket.send("226")
+	print 'Closing Data connection.'
+	ServerDataSocket.close()
+	
+
+
+while 1:
+	print 'The server is Waiting for a connection.'
+	filePathDict.clear()
+	try:
+		connectionSocket, addr = serverSocket.accept() 
+		clientIP = addr[0] 
+		filename = connectionSocket.recv(1024) 
+		
+		connectionSocket.send("500") #500: Syntax error; unrecognized command
+		connectionSocket.close()
+		
+	except:
+		print 'Error: Connection lost.'
+		connectionSocket.close()
+	
