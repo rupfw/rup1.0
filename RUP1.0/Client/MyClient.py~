@@ -7,51 +7,39 @@ blksz = 1024
 
 if len(sys.argv) < 2:
 	print 'Server Port No. missing in command line arguments'
-	serverControlPort = raw_input('Enter Server Port No.: ')
+	serverPort = raw_input('Enter Server Port No.: ')
 else:
-	serverControlPort = sys.argv[1]
+	serverPort = sys.argv[1]
 
 serverIP = '127.0.0.1'
-clientControlSocket = socket(AF_INET, SOCK_STREAM) 
+clientSocket = socket(AF_INET, SOCK_STREAM) 
 
 #Function Start here--
-def ReceiveFile(DataPort,filename):
+def ReceiveFile(filename):
 	try:
-		clientControlSocket.send(str(DataPort))
-		
-		ClientDataSocket = socket(AF_INET,SOCK_STREAM) 
-		ClientDataSocket.bind(('127.0.0.1',DataPort)) 
-		ClientDataSocket.listen(1)
-		
-		ClientDataConnection, addr = ClientDataSocket.accept()
-		clientControlSocket.send("125") # 125: Data connection open; data transfer will start shortly
-		filepath = "Client/"+filename
-		file = open(filepath, 'wb') # create local file in cwd
+		filepath = filename
+		file = open('testfile', 'wb') # create local file in cwd
 		while True:
-			data = ClientDataConnection.recv(blksz) # get up to 1K at a time
+			data = clientSocket.recv(blksz) # get up to 1K at a time
 			if not data: break # till closed on server side
 			file.write(data) # store data in local file
-		print 'File Received.'	
-		if clientControlSocket.recv(1024)=="226":
-			print 'Closing Data Connection.'
-		ClientDataConnection.close()
 		file.close()
+		print 'File Received.'
 		return 0
 	except:
-		ClientDataConnection.close()
+		print 'File Receiving Error'
 		file.close()
 		return -1
 #Function end here--
 
 try:
-	clientControlSocket.connect((serverIP,int (serverControlPort)))
-	file = "\Server\PLT.pdf"; 
-	clientControlSocket.send(file)
-	ControlConRecv = clientControlSocket.recv(1024) 
-
+	clientSocket.connect((serverIP,int (serverPort)))
+	file = "PLT.pdf"; 
+	clientSocket.send(file)
+	ReceiveFile(file)
+	ControlConRecv = clientSocket.recv(1024) 
 	print (ControlConRecv)
-
-	clientControlSocket.close()
+	clientSocket.close()
 except:
-	clientControlSocket.close()
+	clientSocket.close()
 
